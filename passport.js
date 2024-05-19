@@ -57,7 +57,12 @@ const googleAuthConfig = (passport) => {
         },
         async (accessToken, refreshToken, profile, done) => {
             try {
-                let user = await User.findOne({ email: profile.emails[0].value }).maxTimeMS(30000);
+                let user = await User.findOne({
+                $or: [
+                    { googleId: profile.id },
+                    { email: profile.emails[0].value }
+                ]
+            }).maxTimeMS(30000);
 
                 if (!user) {
                     // Generate userId for new user

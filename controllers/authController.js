@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
-const { getUserProfile } = require('./userController');
 
 // Function to send email
 const sendEmail = async (email, subject, message) => {
@@ -37,22 +36,27 @@ const signup = async (req, res) => {
   try {
     // Extract user data from request body
     const { name, email, phoneNumber, password } = req.body;
-    //  Check if user already exists by email, name, or phoneNumber
-    const existingUser = await User.findOne({ $or: [{ email }, { name }] });
+
+    // Check if user already exists by email or name
+    const existingUser = await User.findOne({ $or: [{ email }, { phoneNumber }] });
     if (existingUser) {
       if (existingUser.email === email) {
         return res.status(400).json({ error: 'Email is already registered' });
-      } else{
-        return res.status(400).json({ error: 'Name is already taken' });
+      } else {
+        return res.status(400).json({ error: 'Phone Number is already registered.' });
       }
     }
+
     // Check if password meets the minimum length requirement
     if (password.length < 8) {
       return res.status(400).json({ error: 'Password should be at least 8 characters long' });
     }
 
-    // Generate a unique userId combining the name and a random string
-    const userId = name.replace(/\s+/g, '') + '_' + Math.random().toString(36).substr(2, 5);
+    // Generate a unique userId combining the name initials and a sequential number
+    const initials = name.split(' ').map(namePart => namePart.charAt(0)).join('').toUpperCase();
+    const existingUsersCount = await User.countDocuments({ userId: { $regex: new RegExp('^' + initials) } });
+    const paddedNumber = (existingUsersCount + 1).toString().padStart(6, '0');
+    const userId = initials + paddedNumber;
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -73,6 +77,7 @@ const signup = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 
 
@@ -126,7 +131,7 @@ const forgotPassword = async (req, res) => {
     await user.save();
 
     // Send email with reset password link
-    const resetLink = `http://localhost:3000/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+    const resetLink = `https://statapp.in/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
     const subject = 'Reset Your Password';
     const message = `Dear ${user.name},\n\nPlease click on the following link to reset your password:\n\n${resetLink}\n\nRegards,\nstat. Team`;
     await sendEmail(email, subject, message);
