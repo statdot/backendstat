@@ -175,7 +175,7 @@ const forgotPassword = async (req, res) => {
           html: `
               <p>You have requested to reset your password.</p>
               <p>Click the following link to reset your password:</p>
-              <a href="http://localhost:3000/reset-password/${user._id}">Reset Password</a>
+              <a href="https://statapp.in/reset-password/${user._id}">Reset Password</a>
           `
       };
 
