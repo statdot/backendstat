@@ -26,6 +26,38 @@ function calculateMatchResult(matchSetsScore, teamName, opponentTeam) {
     }
 }
 
+// Function to fetch team name based on user ID
+async function getTeamName(userId) {
+    try {
+        const match = await Match.findOne({ $or: [{ userIdSelf: userId }, { partnerId: userId }] });
+        if (match) {
+            if (match.userIdSelf === userId) {
+                return match.teamNameSelf;
+            } else {
+                return match.partnerId;
+            }
+        }
+        return null; // No match found
+    } catch (error) {
+        console.error('Error fetching team name:', error);
+        throw error;
+    }
+}
+
+// Function to fetch opponent team name based on user ID
+async function getOpponentTeamName(userId) {
+    try {
+        const match = await Match.findOne({ $or: [{ opponentPlayer1Id: userId }, { opponentPlayer2Id: userId }] });
+        if (match) {
+            return match.opponentTeamName;
+        }
+        return null; // No match found
+    } catch (error) {
+        console.error('Error fetching opponent team name:', error);
+        throw error;
+    }
+}
+
 exports.createMatch = async (req, res) => {
     try {
         const { userIdSelf, teamNameSelf, partnerId, opponentTeamName, opponentPlayer1Id, opponentPlayer2Id, sport, format, matchSetsScore } = req.body;
@@ -48,13 +80,18 @@ exports.createMatch = async (req, res) => {
             return res.status(400).json({ message: `Invalid user IDs: ${invalidIds.join(', ')}, please enter valid Id.` });
         }
 
-        // Calculate match result based on the scorecard/scoring rules
-        const result = calculateMatchResult(matchSetsScore, teamNameSelf, opponentTeamName);
+        // Fetch team names based on user IDs if they have already played a match together
+        const teamName = await getTeamName(userIdSelf);
+        const partnerTeamName = await getTeamName(partnerId);
+        const opponentTeam = await getOpponentTeamName(opponentPlayer1Id);
+
+        const result = calculateMatchResult(matchSetsScore, teamName, opponentTeam);
 
         const newMatch = new Match({
             userIdSelf,
-            teamNameSelf,
+            teamNameSelf: teamName || teamNameSelf, // Use fetched team name if available, otherwise use provided name
             partnerId,
+            teamNamePartner: partnerTeamName || teamNameSelf, // Use fetched team name if available, otherwise use provided name
             opponentTeamName,
             opponentPlayer1Id,
             opponentPlayer2Id,
