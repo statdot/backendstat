@@ -31,6 +31,7 @@ app.use(passport.session());
 // CORS middleware
 app.use(cors({
   origin: 'https://statapp.in',
+  // origin: 'http://localhost:3000',
   credentials: true, // Allow cookies to be sent from the client
 }));
 
