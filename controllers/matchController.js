@@ -1,4 +1,5 @@
-const Match = require('../models/Match'); // Ensure the correct path to the model
+const Match = require('../models/Match'); 
+const User = require('../models/User');
 
 // Function to calculate match result based on the scores of matchSetsScore
 function calculateMatchResult(matchSetsScore, teamName, opponentTeam) {
@@ -27,20 +28,37 @@ function calculateMatchResult(matchSetsScore, teamName, opponentTeam) {
 
 exports.createMatch = async (req, res) => {
     try {
-        const { teamName, opponentTeam, sportsName, format, matchSetsScore } = req.body;
+        const { userIdSelf, teamNameSelf, partnerId, opponentTeamName, opponentPlayer1Id, opponentPlayer2Id, sport, format, matchSetsScore } = req.body;
 
         // Validate required fields
-        if (!teamName || !opponentTeam || !sportsName || !format || !Array.isArray(matchSetsScore)) {
+        if (!userIdSelf || !teamNameSelf || !partnerId || !opponentTeamName || !opponentPlayer1Id || !opponentPlayer2Id || !sport || !format || !Array.isArray(matchSetsScore)) {
             return res.status(400).json({ message: 'Invalid input' });
         }
 
-        // Calculate match result based on the scorecard/scoring rules of Padel
-        const result = calculateMatchResult(matchSetsScore, teamName, opponentTeam);
+        // Check if all IDs are distinct
+        if (new Set([userIdSelf, partnerId, opponentPlayer1Id, opponentPlayer2Id]).size !== 4) {
+            return res.status(400).json({ message: 'All IDs must be distinct' });
+        }
+
+        // Check if all IDs correspond to existing users
+        const existingUsers = await User.find({ userId: { $in: [userIdSelf, partnerId, opponentPlayer1Id, opponentPlayer2Id] } });
+        const existingUserIds = existingUsers.map(user => user.userId.toString());
+        const invalidIds = [userIdSelf, partnerId, opponentPlayer1Id, opponentPlayer2Id].filter(userId => !existingUserIds.includes(userId));
+        if (invalidIds.length > 0) {
+            return res.status(400).json({ message: `Invalid user IDs: ${invalidIds.join(', ')}, please enter valid Id.` });
+        }
+
+        // Calculate match result based on the scorecard/scoring rules
+        const result = calculateMatchResult(matchSetsScore, teamNameSelf, opponentTeamName);
 
         const newMatch = new Match({
-            teamName,
-            opponentTeam,
-            sportsName,
+            userIdSelf,
+            teamNameSelf,
+            partnerId,
+            opponentTeamName,
+            opponentPlayer1Id,
+            opponentPlayer2Id,
+            sport,
             format,
             matchSetsScore,
             result

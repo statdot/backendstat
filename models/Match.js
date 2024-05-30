@@ -12,18 +12,33 @@ const matchSetSchema = new mongoose.Schema({
 });
 
 const matchSchema = new mongoose.Schema({
-    teamName: {
+    userIdSelf: {
         type: String,
         required: true
     },
-    opponentTeam: {
+    teamNameSelf: {
         type: String,
         required: true
     },
-    sportsName: {
+    partnerId: {
         type: String,
-        required: true,
-        enum: ['Padel'] // Add other sports if needed
+        required: true
+    },
+    opponentTeamName: {
+        type: String,
+        required: true
+    },
+    opponentPlayer1Id: {
+        type: String,
+        required: true
+    },
+    opponentPlayer2Id: {
+        type: String,
+        required: true
+    },
+    sport: {
+        type: String,
+        required: true
     },
     format: {
         type: String,
