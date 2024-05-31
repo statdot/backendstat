@@ -26,37 +26,48 @@ function calculateMatchResult(matchSetsScore, teamName, opponentTeam) {
     }
 }
 
-// Function to fetch team name based on user ID
-async function getTeamName(userId) {
+// Get Team Name based on User ID and Partner ID
+exports.getTeamName = async (req, res) => {
     try {
-        const match = await Match.findOne({ $or: [{ userIdSelf: userId }, { partnerId: userId }] });
+        const { userId, partnerId } = req.query;
+        
+        const match = await Match.findOne({
+            userIdSelf: userId,
+            partnerId: partnerId
+        });
+        
         if (match) {
-            if (match.userIdSelf === userId) {
-                return match.teamNameSelf;
-            } else {
-                return match.partnerId;
-            }
+            res.status(200).json({ teamName: match.teamNameSelf });
+        } else {
+            res.status(404).json({ message: 'No team found for these players' });
         }
-        return null; // No match found
     } catch (error) {
         console.error('Error fetching team name:', error);
-        throw error;
+        res.status(500).json({ message: 'Internal server error' });
     }
-}
+};
 
-// Function to fetch opponent team name based on user ID
-async function getOpponentTeamName(userId) {
+// Get Opponent Team Name based on Opponent Player IDs
+exports.getOpponentTeamName = async (req, res) => {
     try {
-        const match = await Match.findOne({ $or: [{ opponentPlayer1Id: userId }, { opponentPlayer2Id: userId }] });
+        const { opponentPlayer1Id, opponentPlayer2Id } = req.query;
+
+        // Find the team name where the opponent players have played together
+        const match = await Match.findOne({
+            opponentPlayer1Id: opponentPlayer1Id,
+            opponentPlayer2Id: opponentPlayer2Id
+        });
+
         if (match) {
-            return match.opponentTeamName;
+            res.status(200).json({ opponentTeamName: match.opponentTeamName });
+        } else {
+            res.status(404).json({ message: 'No opponent team found for these players' });
         }
-        return null; // No match found
     } catch (error) {
         console.error('Error fetching opponent team name:', error);
-        throw error;
+        res.status(500).json({ message: 'Internal server error' });
     }
-}
+};
 
 exports.createMatch = async (req, res) => {
     try {
@@ -80,18 +91,12 @@ exports.createMatch = async (req, res) => {
             return res.status(400).json({ message: `Invalid user IDs: ${invalidIds.join(', ')}, please enter valid Id.` });
         }
 
-        // Fetch team names based on user IDs if they have already played a match together
-        const teamName = await getTeamName(userIdSelf);
-        const partnerTeamName = await getTeamName(partnerId);
-        const opponentTeam = await getOpponentTeamName(opponentPlayer1Id);
-
-        const result = calculateMatchResult(matchSetsScore, teamName, opponentTeam);
+        const result = calculateMatchResult(matchSetsScore, teamNameSelf, opponentTeamName);
 
         const newMatch = new Match({
             userIdSelf,
-            teamNameSelf: teamName || teamNameSelf, // Use fetched team name if available, otherwise use provided name
+            teamNameSelf,
             partnerId,
-            teamNamePartner: partnerTeamName || teamNameSelf, // Use fetched team name if available, otherwise use provided name
             opponentTeamName,
             opponentPlayer1Id,
             opponentPlayer2Id,
