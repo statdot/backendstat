@@ -119,7 +119,7 @@ const forgotPassword = async (req, res) => {
     // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ error: 'User not found' });
+      return res.status(400).json({ error: 'Email not found. Kindly sign up to create a new account.' });
     }
 
     // Generate unique token for password reset link
@@ -136,9 +136,8 @@ const forgotPassword = async (req, res) => {
     const message = `Dear ${user.name},\n\nPlease click on the following link to reset your password:\n\n${resetLink}\n\nRegards,\nstat. Team`;
     await sendEmail(email, subject, message);
 
-
     // Respond with success message
-    res.json({ message: 'Password reset link sent to your email' });
+    res.json({ message: 'Password reset email sent successfully. Please check your email.' });
   } catch (error) {
     console.error('Error in forgotPassword:', error);
     res.status(500).json({ error: 'Internal Server Error' });
