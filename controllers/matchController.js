@@ -75,7 +75,7 @@ exports.createMatch = async (req, res) => {
 
         // Validate required fields
         if (!userIdSelf || !teamNameSelf || !partnerId || !opponentTeamName || !opponentPlayer1Id || !opponentPlayer2Id || !sport || !format || !Array.isArray(matchSetsScore)) {
-            return res.status(400).json({ message: 'Invalid input' });
+            return res.status(400).json({ message: 'Enter all and valid inputs.' });
         }
 
         // Check if all IDs are distinct
