@@ -4,17 +4,16 @@ const User = require('../models/User');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
-// Function to send email
+// Function to send email using GoDaddy SMTP server
 const sendEmail = async (email, subject, message) => {
   try {
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
+      host: 'smtpout.secureserver.net', // GoDaddy's SMTP server
+      port: 465, // Secure port for SSL
+      secure: true, // Use SSL
       auth: {
-        user: process.env.EMAIL_USERNAME,
-        pass: process.env.EMAIL_PASSWORD
+        user: process.env.EMAIL_USERNAME, // Your GoDaddy email address
+        pass: process.env.EMAIL_PASSWORD // Your GoDaddy email password
       }
     });
 
@@ -37,7 +36,7 @@ const signup = async (req, res) => {
     // Extract user data from request body
     const { name, email, phoneNumber, password } = req.body;
 
-    // Check if user already exists by email or name
+    // Check if user already exists by email or phone number
     const existingUser = await User.findOne({ $or: [{ email }, { phoneNumber }] });
     if (existingUser) {
       if (existingUser.email === email) {
@@ -77,9 +76,6 @@ const signup = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
-
-
 
 const login = async (req, res) => {
   try {
@@ -144,7 +140,6 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-
 // Controller function for resetting password
 const resetPassword = async (req, res) => {
   try {
@@ -176,6 +171,5 @@ const resetPassword = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
 
 module.exports = { signup, login, forgotPassword, resetPassword };
